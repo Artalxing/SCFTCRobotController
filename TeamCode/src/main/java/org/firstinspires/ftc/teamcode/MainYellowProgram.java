@@ -73,7 +73,7 @@ public class MainYellowProgram extends LinearOpMode {
      ElapsedTime runtime = new ElapsedTime();
      DcMotor frontLeftDrive, backLeftDrive,frontRightDrive,backRightDrive,leftflywheel,rightflywheel,rotate, intake;
 
-Servo servo;
+//Servo servo;
 
 TouchSensor limit;
 
@@ -100,9 +100,9 @@ private int lowerRotationLimit = 0;
 
         intake = hardwareMap.get(DcMotor.class, "intake");
 
-        servo = hardwareMap.get(Servo.class, "servoTest");
+        //servo = hardwareMap.get(Servo.class, "servoTest");
 
-        limit = hardwareMap.get(TouchSensor.class, "limit");
+        //limit = hardwareMap.get(TouchSensor.class, "limit");
 
 
 
@@ -251,11 +251,14 @@ if(gamepad2.right_trigger > 0.07){
     intake.setPower(0);
 }
 
+/*
 if(gamepad1.a){
     servo.setPosition(1);
 } else{
     servo.setPosition(.66);
 }
+
+ */
 
 //if(limit.isPressed()){
 //    lowerRotationLimit = currentValue;
