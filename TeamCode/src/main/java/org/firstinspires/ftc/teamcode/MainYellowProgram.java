@@ -29,14 +29,12 @@
 
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import org.threeten.bp.Instant;
 
 /*
  * This file contains an example of a Linear "OpMode".
@@ -66,28 +64,25 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list
  */
 
-@TeleOp(name="MainYellowProgram", group="Linear OpMode")
+@TeleOp(name = "MainYellowProgram", group = "Linear OpMode")
 public class MainYellowProgram extends LinearOpMode {
 
     // Declare OpMode members for each of the 4 motors.
-     ElapsedTime runtime = new ElapsedTime();
-     DcMotor frontLeftDrive, backLeftDrive,frontRightDrive,backRightDrive,leftflywheel,rightflywheel,rotate, intake;
+    ElapsedTime runtime = new ElapsedTime();
+    DcMotor frontLeftDrive, backLeftDrive, frontRightDrive, backRightDrive, leftflywheel, rightflywheel, rotate, intake;
 
 //Servo servo;
 
-TouchSensor limit;
+    TouchSensor limit;
 
-private int ROTATION_ROM = 200;
-private double DEADZONE = 0.1;
-private int lowerRotationLimit = 0;
+    private int ROTATION_ROM = 200;
+    private double DEADZONE = 0.1;
+    private int lowerRotationLimit = 0;
 
-
-
-
+    int loopCount = 0;
 
     @Override
     public void runOpMode() {
-
         // Initialize the hardware variables. Note that the strings used here must correspond
         // to the names assigned during the robot configuration step on the DS or RC devices.
         frontLeftDrive = hardwareMap.get(DcMotor.class, "fl");
@@ -103,11 +98,6 @@ private int lowerRotationLimit = 0;
         //servo = hardwareMap.get(Servo.class, "servoTest");
 
         //limit = hardwareMap.get(TouchSensor.class, "limit");
-
-
-
-
-
 
 
         // ########################################################################################
@@ -137,11 +127,7 @@ private int lowerRotationLimit = 0;
 //        rotate.setPower(1);
 
 
-
- boolean dcMotorrunning = true;
-
-
-
+        boolean dcMotorrunning = true;
 
 
         // Wait for the game to start (driver presses START)
@@ -153,35 +139,47 @@ private int lowerRotationLimit = 0;
 //        rotate.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 //        rotate.setPower(.1);
         // run until the end of the match (driver presses STOP)
+        //Deltatime
+        long currentTime = System.currentTimeMillis();
+        long sleepTimer = 0L;
+
+
+        //Debug TODO
+        int loopCount = 0;
         while (opModeIsActive()) {
+            loopCount++;
+            //Delta Time System
+            long deltaTime = currentTime - System.currentTimeMillis();
+            currentTime = System.currentTimeMillis();
+
             double max;
 
             // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
             double axial = 0, lateral = 0, yaw = 0;
-            if(Math.abs(gamepad1.left_stick_y) > DEADZONE){
+            if (Math.abs(gamepad1.left_stick_y) > DEADZONE) {
                 axial = -gamepad1.left_stick_y;
-            }else {
+            } else {
                 axial = 0;
             }
 
-            if(Math.abs(gamepad1.left_stick_x) > DEADZONE){
-                lateral =  gamepad1.left_stick_x;
+            if (Math.abs(gamepad1.left_stick_x) > DEADZONE) {
+                lateral = gamepad1.left_stick_x;
             } else {
                 lateral = 0;
             }
 
-            if(Math.abs(gamepad1.right_stick_x) > DEADZONE){
+            if (Math.abs(gamepad1.right_stick_x) > DEADZONE) {
                 yaw = gamepad1.right_stick_x;
-            }else{
+            } else {
                 yaw = 0;
             }
 
             // Combine the joystick requests for each axis-motion to determine each wheel's power.
             // Set up a variable for each drive wheel to save the power level for telemetry.
-           double frontLeftPower  = axial + lateral + yaw;//FRONT LEFT
-           double frontRightPower = axial - lateral - yaw;//FRONT RIGHT
-           double backLeftPower   = axial - lateral + yaw;//BACK LEFT
-           double backRightPower  = axial + lateral - yaw;//BACK RIGHT
+            double frontLeftPower = axial + lateral + yaw;//FRONT LEFT
+            double frontRightPower = axial - lateral - yaw;//FRONT RIGHT
+            double backLeftPower = axial - lateral + yaw;//BACK LEFT
+            double backRightPower = axial + lateral - yaw;//BACK RIGHT
 
             //double frontLeftPower  =  yaw;//BACK LEFT
             //double frontRightPower =  yaw;//FRONT LEFT
@@ -194,12 +192,12 @@ private int lowerRotationLimit = 0;
             max = Math.max(max, Math.abs(backLeftPower));
             max = Math.max(max, Math.abs(backRightPower));
 
-           if (max > 1.0) {
-               frontLeftPower  /= max;
-               frontRightPower /= max;
-                backLeftPower   /= max;
-            backRightPower  /= max;
-          }
+            if (max > 1.0) {
+                frontLeftPower /= max;
+                frontRightPower /= max;
+                backLeftPower /= max;
+                backRightPower /= max;
+            }
 
             // This is test code:
             //
@@ -226,53 +224,75 @@ private int lowerRotationLimit = 0;
             backRightDrive.setPower(backRightPower);
 
 
-if (gamepad2.dpad_up) rotate.setTargetPosition(rotate.getTargetPosition()+1);
-if (gamepad2.dpad_down) rotate.setTargetPosition(rotate.getTargetPosition()-1);
-rotate.setPower(0.1);
-           //fly wheel stuff
-if (gamepad2.right_bumper && !dcMotorrunning) {
-    leftflywheel.setPower(-1);
-    rightflywheel.setPower(-1);
-    dcMotorrunning=true;
-    sleep(300); //TODO Sleeping a thread WHYYYYYYY
-}
-if (gamepad2.right_bumper && dcMotorrunning) {
-    leftflywheel.setPower(0);
-    rightflywheel.setPower(0);
-    dcMotorrunning=false;
-    sleep(300); //TODO Sleeping a thread WHYYYYYYY
-}
-
-if(gamepad2.right_trigger > 0.07){
-    intake.setPower(gamepad2.right_trigger);
-} else if(gamepad2.left_trigger > 0.07){
-    intake.setPower(-gamepad2.left_trigger);
-} else{
-    intake.setPower(0);
-}
-
-/*
-if(gamepad1.a){
-    servo.setPosition(1);
-} else{
-    servo.setPosition(.66);
-}
-
- */
-
-//if(limit.isPressed()){
-//    lowerRotationLimit = currentValue;
-//}
-
+            if (gamepad2.dpad_up) rotate.setTargetPosition(rotate.getTargetPosition() + 1);
+            if (gamepad2.dpad_down) rotate.setTargetPosition(rotate.getTargetPosition() - 1);
+            rotate.setPower(0.1);
+            //fly wheel stuff
+            if (gamepad2.right_bumper && !dcMotorrunning && sleepTimer <= 0) {
+                leftflywheel.setPower(-1);
+                rightflywheel.setPower(-1);
+                dcMotorrunning = true;
+                //sleep(300); //TODO Sleeping a thread WHYYYYYYY
+                sleepTimer = 300;
+            }
+            if (gamepad2.right_bumper && dcMotorrunning && sleepTimer <= 0) {
+                leftflywheel.setPower(0);
+                rightflywheel.setPower(0);
+                dcMotorrunning = false;
+                //sleep(300); //TODO Sleeping a thread WHYYYYYYY
+                sleepTimer = 300;
             }
 
+            if (gamepad2.right_trigger > 0.07) {
+                telemetry.addData("Intake", "Running"); //TODO Debug code
+                intake.setPower(gamepad2.right_trigger);
+            } else if (gamepad2.left_trigger > 0.07) {
+                intake.setPower(-gamepad2.left_trigger);
+            } else {
+                intake.setPower(0);
+            }
 
+            //Update Sleep Timer
+            sleepTimer -= deltaTime;
 
+            /*
+            if(gamepad1.a){
+                servo.setPosition(1);
+            } else{
+                servo.setPosition(.66);
+            }
 
+             */
 
-            // Show the elapsed game time and wheel power.
-            telemetry.addData("Status", "Run Time: " + runtime.toString());
-           telemetry.addData("flywheelrunning: ",dcMotorrunning);
+            //if(limit.isPressed()){
+            //    lowerRotationLimit = currentValue;
+            //}
+            //TODO Debug code
+            telemetry.addData("Current Time", Instant.now());
+            telemetry.addData("Loop Count", loopCount);
+            telemetry.addData("Sleep Timer", sleepTimer);
+            telemetry.addData("Gamepad 1 Left Stick Y", gamepad1.left_stick_y);
+            telemetry.addData("Gamepad 1 Left Stick X", gamepad1.left_stick_x);
+            telemetry.addData("Gamepad 1 Right Stick Y", gamepad1.right_stick_y);
+            telemetry.addData("Gamepad 1 Right Stick X", gamepad1.right_stick_x);
+            telemetry.addData("Gamepad 2 Right Bumper", gamepad2.right_bumper);
+            telemetry.addData("Gamepad 2 Right Trigger", gamepad2.right_trigger);
+            telemetry.addData("Gamepad 2 Left Trigger", gamepad2.left_trigger);
+            telemetry.addData("Gamepad 2 DPad Up", gamepad2.dpad_up);
+            telemetry.addData("Gamepad 2 DPad Down", gamepad2.dpad_down);
+            telemetry.addData("Front Left Power", frontLeftPower);
+            telemetry.addData("Front Right Power", frontRightPower);
+            telemetry.addData("Back Left Power", backLeftPower);
+            telemetry.addData("Back Right Power", backRightPower);
+
             telemetry.update();
+
         }
+
+
+        // Show the elapsed game time and wheel power.
+        telemetry.addData("Status", "Run Time: " + runtime.toString());
+        telemetry.addData("flywheelrunning: ", dcMotorrunning);
+        telemetry.update();
     }
+}
