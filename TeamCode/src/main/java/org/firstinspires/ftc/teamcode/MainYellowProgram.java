@@ -149,7 +149,7 @@ public class MainYellowProgram extends LinearOpMode {
         while (opModeIsActive()) {
             loopCount++;
             //Delta Time System
-            long deltaTime = currentTime - System.currentTimeMillis();
+            long deltaTime = System.currentTimeMillis() - currentTime;
             currentTime = System.currentTimeMillis();
 
             double max;
@@ -244,11 +244,13 @@ public class MainYellowProgram extends LinearOpMode {
             }
 
             if (gamepad2.right_trigger > 0.07) {
-                telemetry.addData("Intake", "Running"); //TODO Debug code
+                telemetry.addData("Intake", "Running Dir1"); //TODO Debug code
                 intake.setPower(gamepad2.right_trigger);
             } else if (gamepad2.left_trigger > 0.07) {
+                telemetry.addData("Intake", "Running Dir2"); //TODO Debug code
                 intake.setPower(-gamepad2.left_trigger);
             } else {
+                telemetry.addData("Intake", "Not Running"); //TODO Debug code
                 intake.setPower(0);
             }
 
@@ -271,6 +273,7 @@ public class MainYellowProgram extends LinearOpMode {
             telemetry.addData("Current Time", Instant.now());
             telemetry.addData("Loop Count", loopCount);
             telemetry.addData("Sleep Timer", sleepTimer);
+            telemetry.addData("DeltaTime", deltaTime);
             telemetry.addData("Gamepad 1 Left Stick Y", gamepad1.left_stick_y);
             telemetry.addData("Gamepad 1 Left Stick X", gamepad1.left_stick_x);
             telemetry.addData("Gamepad 1 Right Stick Y", gamepad1.right_stick_y);
@@ -284,6 +287,7 @@ public class MainYellowProgram extends LinearOpMode {
             telemetry.addData("Front Right Power", frontRightPower);
             telemetry.addData("Back Left Power", backLeftPower);
             telemetry.addData("Back Right Power", backRightPower);
+            telemetry.addData("Intake Power",  intake.getPower());
 
             telemetry.update();
 
