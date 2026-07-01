@@ -66,40 +66,29 @@ import org.threeten.bp.Instant;
  * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list
  */
 
-@TeleOp(name = "MainYellowProgram", group = "Linear OpMode")
-public class MainYellowProgram extends LinearOpMode {
+@TeleOp(name = "MainDrivingProgram", group = "Linear OpMode")
+public class MainDrivingProgram extends LinearOpMode {
 
-    // Declare OpMode members for each of the 4 motors.
+    // Variable Declaration
     ElapsedTime runtime = new ElapsedTime();
-    DcMotor frontLeftDrive, backLeftDrive, frontRightDrive, backRightDrive, leftflywheel, rightflywheel, rotate, intake;
+    DcMotor frontLeftDrive, backLeftDrive, frontRightDrive, backRightDrive;
 
-//Servo servo;
-
-    TouchSensor limit;
-
-    private int ROTATION_ROM = 200;
-    private double DEADZONE = 0.1;
-    private int lowerRotationLimit = 0;
-
-    int loopCount = 0;
+    private final double DEADZONE = 0.1;
+    private final boolean DEBUG = true;
+    //Naming
+    private final String frontLeftMotorName = "frontLeft";
+    private final String backLeftMotorName = "backLeft";
+    private final String frontRightMotorName = "frontRight";
+    private final String backRightMotorName = "backRight";
 
     @Override
     public void runOpMode() {
         // Initialize the hardware variables. Note that the strings used here must correspond
         // to the names assigned during the robot configuration step on the DS or RC devices.
-        frontLeftDrive = hardwareMap.get(DcMotor.class, "fl");
-        backLeftDrive = hardwareMap.get(DcMotor.class, "bl");
-        frontRightDrive = hardwareMap.get(DcMotor.class, "fr");
-        backRightDrive = hardwareMap.get(DcMotor.class, "br");
-        leftflywheel = hardwareMap.get(DcMotor.class, "lfw");
-        rightflywheel = hardwareMap.get(DcMotor.class, "rfw");
-        rotate = hardwareMap.get(DcMotor.class, "rotate");
-
-        intake = hardwareMap.get(DcMotor.class, "intake");
-
-        //servo = hardwareMap.get(Servo.class, "servoTest");
-
-        //limit = hardwareMap.get(TouchSensor.class, "limit");
+        frontLeftDrive = hardwareMap.get(DcMotor.class, frontLeftMotorName);
+        backLeftDrive = hardwareMap.get(DcMotor.class, backLeftMotorName);
+        frontRightDrive = hardwareMap.get(DcMotor.class, frontRightMotorName);
+        backRightDrive = hardwareMap.get(DcMotor.class, backRightMotorName);
 
 
         // ########################################################################################
@@ -121,16 +110,9 @@ public class MainYellowProgram extends LinearOpMode {
         backRightDrive.setDirection(DcMotor.Direction.FORWARD);
         backRightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        rotate.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        rotate.setTargetPosition(0);
-        rotate.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-//       rotate.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-//        rotate.setPower(1);
-
         //init variables
-        boolean dcMotorrunning = true;
         Vector2 dir = new Vector2(0,0);
+        int loopCount = 0;
         double rotation;
         boolean inverted = false;
         double power = 1;
@@ -144,25 +126,15 @@ public class MainYellowProgram extends LinearOpMode {
 
         // Wait for the game to start (driver presses START)
         telemetry.addData("Status", "Initialized");
-
-
         waitForStart();
         runtime.reset();
-//        rotate.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-//        rotate.setPower(.1);
-        // run until the end of the match (driver presses STOP)
 
-
-
-        //Debug TODO
-        int loopCount = 0;
+       //Main runtime loop
         while (opModeIsActive()) {
             loopCount++;
             //Delta Time System
             long deltaTime = System.currentTimeMillis() - currentTime;
             currentTime = System.currentTimeMillis();
-
-            double max;
 
             // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
             //Get direction
@@ -175,58 +147,27 @@ public class MainYellowProgram extends LinearOpMode {
             if(Math.abs(rotation) < DEADZONE) rotation = 0;
             //See if inverted
             if(inverted){
-                rotation = -rotation;
                 dir.invert();
             }
             //Apply
-            dirPower.drive(dir, power, rotation, telemetry, true);
+            dirPower.drive(dir, power, rotation, telemetry, false);
 
             //Handle drive speed
             if (gamepad1.right_trigger > DEADZONE && gamepad1.left_trigger > DEADZONE){
                 //Pressing both triggers returns speed to max
                 power = 1;
             } else if (gamepad1.left_trigger > DEADZONE && driveSpeedSleepTimer <= 0){
-                power -= 0.01;
+                power -= 0.02;
                 driveSpeedSleepTimer = 50;
             } else if (gamepad1.right_trigger > DEADZONE && driveSpeedSleepTimer <= 0){
-                power += 0.01;
+                power += 0.02;
                 driveSpeedSleepTimer = 50;
             }
 
             //Inversion
-            if (gamepad1.a && invertSleepTimer <= 0){
+            if (gamepad1.right_bumper && gamepad1.left_bumper && invertSleepTimer <= 0){
                 inverted = !inverted;
                 invertSleepTimer = 500;
-            }
-
-            if (gamepad2.dpad_up) rotate.setTargetPosition(rotate.getTargetPosition() + 1);
-            if (gamepad2.dpad_down) rotate.setTargetPosition(rotate.getTargetPosition() - 1);
-            rotate.setPower(0.1);
-            //fly wheel stuff
-            if (gamepad2.right_bumper && !dcMotorrunning && flywheelSleepTimer <= 0) {
-                leftflywheel.setPower(-1);
-                rightflywheel.setPower(-1);
-                dcMotorrunning = true;
-                //Set sleep timer
-                flywheelSleepTimer = 300;
-            }
-            if (gamepad2.right_bumper && dcMotorrunning && flywheelSleepTimer <= 0) {
-                leftflywheel.setPower(0);
-                rightflywheel.setPower(0);
-                dcMotorrunning = false;
-                //Set sleep timer
-                flywheelSleepTimer = 300;
-            }
-
-            if (gamepad2.right_trigger > 0.07) {
-                telemetry.addData("Intake", "Running Dir1"); //TODO Debug code
-                intake.setPower(gamepad2.right_trigger);
-            } else if (gamepad2.left_trigger > 0.07) {
-                telemetry.addData("Intake", "Running Dir2"); //TODO Debug code
-                intake.setPower(-gamepad2.left_trigger);
-            } else {
-                telemetry.addData("Intake", "Not Running"); //TODO Debug code
-                intake.setPower(0);
             }
 
             //Update Sleep Timer
@@ -234,32 +175,31 @@ public class MainYellowProgram extends LinearOpMode {
             invertSleepTimer -= deltaTime;
             driveSpeedSleepTimer -= deltaTime;
 
-
-            //TODO Debug code
-            telemetry.addData("Current Time", Instant.now());
-            telemetry.addData("Loop Count", loopCount);
-            telemetry.addData("Sleep Timer", flywheelSleepTimer);
-            telemetry.addData("DeltaTime", deltaTime);
-            telemetry.addData("Rotate Speed", rotation);
-            telemetry.addData("Gamepad 1 Left Stick Y", gamepad1.left_stick_y);
-            telemetry.addData("Gamepad 1 Left Stick X", gamepad1.left_stick_x);
-            telemetry.addData("Gamepad 1 Right Stick Y", gamepad1.right_stick_y);
-            telemetry.addData("Gamepad 1 Right Stick X", gamepad1.right_stick_x);
-            telemetry.addData("Gamepad 2 Right Bumper", gamepad2.right_bumper);
-            telemetry.addData("Gamepad 2 Right Trigger", gamepad2.right_trigger);
-            telemetry.addData("Gamepad 2 Left Trigger", gamepad2.left_trigger);
-            telemetry.addData("Gamepad 2 DPad Up", gamepad2.dpad_up);
-            telemetry.addData("Gamepad 2 DPad Down", gamepad2.dpad_down);
-            telemetry.addData("Intake Power",  intake.getPower());
-            //dirPower.debugTelemetry(telemetry);
-            telemetry.update();
+            if(DEBUG) {
+                //Debug code goes here
+                telemetry.addData("Current Time", Instant.now());
+                telemetry.addData("Loop Count", loopCount);
+                telemetry.addData("Sleep Timer", flywheelSleepTimer);
+                telemetry.addData("DeltaTime", deltaTime);
+                telemetry.addData("Rotate Speed", rotation);
+                telemetry.addData("Gamepad 1 Left Stick Y", gamepad1.left_stick_y);
+                telemetry.addData("Gamepad 1 Left Stick X", gamepad1.left_stick_x);
+                telemetry.addData("Gamepad 1 Right Stick Y", gamepad1.right_stick_y);
+                telemetry.addData("Gamepad 1 Right Stick X", gamepad1.right_stick_x);
+                telemetry.addData("Gamepad 2 Right Bumper", gamepad2.right_bumper);
+                telemetry.addData("Gamepad 2 Right Trigger", gamepad2.right_trigger);
+                telemetry.addData("Gamepad 2 Left Trigger", gamepad2.left_trigger);
+                telemetry.addData("Gamepad 2 DPad Up", gamepad2.dpad_up);
+                telemetry.addData("Gamepad 2 DPad Down", gamepad2.dpad_down);
+                dirPower.debugTelemetry(telemetry);
+                telemetry.update();
+            }
 
         }
 
 
         // Show the elapsed game time and wheel power.
         telemetry.addData("Status", "Run Time: " + runtime.toString());
-        telemetry.addData("flywheelrunning: ", dcMotorrunning);
         telemetry.update();
     }
 }
