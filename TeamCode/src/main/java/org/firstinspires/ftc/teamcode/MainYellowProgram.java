@@ -34,6 +34,8 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import org.firstinspires.ftc.teamcode.util.DirectionalPower;
+import org.firstinspires.ftc.teamcode.util.Vector2;
 import org.threeten.bp.Instant;
 
 /*
@@ -126,9 +128,19 @@ public class MainYellowProgram extends LinearOpMode {
 //       rotate.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 //        rotate.setPower(1);
 
-
+        //init variables
         boolean dcMotorrunning = true;
+        Vector2 dir = new Vector2(0,0);
+        double rotation;
+        boolean inverted = false;
+        double power = 1;
+        DirectionalPower dirPower = new DirectionalPower(frontLeftDrive, frontRightDrive, backLeftDrive, backRightDrive);
 
+        //Timer vars
+        long currentTime = System.currentTimeMillis();
+        long flywheelSleepTimer = 0L;
+        long invertSleepTimer = 0L;
+        long driveSpeedSleepTimer = 0L;
 
         // Wait for the game to start (driver presses START)
         telemetry.addData("Status", "Initialized");
@@ -139,9 +151,7 @@ public class MainYellowProgram extends LinearOpMode {
 //        rotate.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 //        rotate.setPower(.1);
         // run until the end of the match (driver presses STOP)
-        //Deltatime
-        long currentTime = System.currentTimeMillis();
-        long sleepTimer = 0L;
+
 
 
         //Debug TODO
@@ -155,92 +165,57 @@ public class MainYellowProgram extends LinearOpMode {
             double max;
 
             // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
-            double axial = 0, lateral = 0, yaw = 0;
-            if (Math.abs(gamepad1.left_stick_y) > DEADZONE) {
-                axial = -gamepad1.left_stick_y;
-            } else {
-                axial = 0;
+            //Get direction
+            dir.x = gamepad1.left_stick_x;
+            dir.y = -gamepad1.left_stick_y;
+            //Check deadzone
+            if(dir.magnitude() < DEADZONE) dir.zero();
+            //Get the rotation
+            rotation = gamepad1.right_stick_x;
+            if(Math.abs(rotation) < DEADZONE) rotation = 0;
+            //See if inverted
+            if(inverted){
+                rotation = -rotation;
+                dir.invert();
+            }
+            //Apply
+            dirPower.drive(dir, power, rotation, telemetry, true);
+
+            //Handle drive speed
+            if (gamepad1.right_trigger > DEADZONE && gamepad1.left_trigger > DEADZONE){
+                //Pressing both triggers returns speed to max
+                power = 1;
+            } else if (gamepad1.left_trigger > DEADZONE && driveSpeedSleepTimer <= 0){
+                power -= 0.01;
+                driveSpeedSleepTimer = 50;
+            } else if (gamepad1.right_trigger > DEADZONE && driveSpeedSleepTimer <= 0){
+                power += 0.01;
+                driveSpeedSleepTimer = 50;
             }
 
-            if (Math.abs(gamepad1.left_stick_x) > DEADZONE) {
-                lateral = gamepad1.left_stick_x;
-            } else {
-                lateral = 0;
+            //Inversion
+            if (gamepad1.a && invertSleepTimer <= 0){
+                inverted = !inverted;
+                invertSleepTimer = 500;
             }
-
-            if (Math.abs(gamepad1.right_stick_x) > DEADZONE) {
-                yaw = gamepad1.right_stick_x;
-            } else {
-                yaw = 0;
-            }
-
-            // Combine the joystick requests for each axis-motion to determine each wheel's power.
-            // Set up a variable for each drive wheel to save the power level for telemetry.
-            double frontLeftPower = axial + lateral + yaw;//FRONT LEFT
-            double frontRightPower = axial - lateral - yaw;//FRONT RIGHT
-            double backLeftPower = axial - lateral + yaw;//BACK LEFT
-            double backRightPower = axial + lateral - yaw;//BACK RIGHT
-
-            //double frontLeftPower  =  yaw;//BACK LEFT
-            //double frontRightPower =  yaw;//FRONT LEFT
-            //double backLeftPower   = -yaw;//FRONT RIGHT
-            //double backRightPower  = -yaw;//BACK RIGHT
-
-            // Normalize the values so no wheel power exceeds 100%
-            // This ensures that the robot maintains the desired motion.
-            max = Math.max(Math.abs(frontLeftPower), Math.abs(frontRightPower));
-            max = Math.max(max, Math.abs(backLeftPower));
-            max = Math.max(max, Math.abs(backRightPower));
-
-            if (max > 1.0) {
-                frontLeftPower /= max;
-                frontRightPower /= max;
-                backLeftPower /= max;
-                backRightPower /= max;
-            }
-
-            // This is test code:
-            //
-            // Uncomment the following code to test your motor directions.
-            // Each button should make the corresponding motor run FORWARD.
-            //   1) First get all the motors to take to correct positions on the robot
-            //      by adjusting your Robot Configuration if necessary.
-            //   2) Then make sure they run in the correct direction by modifying the
-            //      the setDirection() calls above.
-            // Once the correct motors move in the correct direction re-comment this code.
-
-            /*
-            frontLeftPower  = gamepad1.x ? 1.0 : 0.0;  // X gamepad
-            backLeftPower   = gamepad1.a ? 1.0 : 0.0;  // A gamepad
-            frontRightPower = gamepad1.y ? 1.0 : 0.0;  // Y gamepad
-            backRightPower  = gamepad1.b ? 1.0 : 0.0;  // B gamepad
-            */
-
-            // Send calculated power to wheels
-
-            frontLeftDrive.setPower(frontLeftPower);
-            frontRightDrive.setPower(frontRightPower);
-            backLeftDrive.setPower(backLeftPower);
-            backRightDrive.setPower(backRightPower);
-
 
             if (gamepad2.dpad_up) rotate.setTargetPosition(rotate.getTargetPosition() + 1);
             if (gamepad2.dpad_down) rotate.setTargetPosition(rotate.getTargetPosition() - 1);
             rotate.setPower(0.1);
             //fly wheel stuff
-            if (gamepad2.right_bumper && !dcMotorrunning && sleepTimer <= 0) {
+            if (gamepad2.right_bumper && !dcMotorrunning && flywheelSleepTimer <= 0) {
                 leftflywheel.setPower(-1);
                 rightflywheel.setPower(-1);
                 dcMotorrunning = true;
-                //sleep(300); //TODO Sleeping a thread WHYYYYYYY
-                sleepTimer = 300;
+                //Set sleep timer
+                flywheelSleepTimer = 300;
             }
-            if (gamepad2.right_bumper && dcMotorrunning && sleepTimer <= 0) {
+            if (gamepad2.right_bumper && dcMotorrunning && flywheelSleepTimer <= 0) {
                 leftflywheel.setPower(0);
                 rightflywheel.setPower(0);
                 dcMotorrunning = false;
-                //sleep(300); //TODO Sleeping a thread WHYYYYYYY
-                sleepTimer = 300;
+                //Set sleep timer
+                flywheelSleepTimer = 300;
             }
 
             if (gamepad2.right_trigger > 0.07) {
@@ -255,25 +230,17 @@ public class MainYellowProgram extends LinearOpMode {
             }
 
             //Update Sleep Timer
-            sleepTimer -= deltaTime;
+            flywheelSleepTimer -= deltaTime;
+            invertSleepTimer -= deltaTime;
+            driveSpeedSleepTimer -= deltaTime;
 
-            /*
-            if(gamepad1.a){
-                servo.setPosition(1);
-            } else{
-                servo.setPosition(.66);
-            }
 
-             */
-
-            //if(limit.isPressed()){
-            //    lowerRotationLimit = currentValue;
-            //}
             //TODO Debug code
             telemetry.addData("Current Time", Instant.now());
             telemetry.addData("Loop Count", loopCount);
-            telemetry.addData("Sleep Timer", sleepTimer);
+            telemetry.addData("Sleep Timer", flywheelSleepTimer);
             telemetry.addData("DeltaTime", deltaTime);
+            telemetry.addData("Rotate Speed", rotation);
             telemetry.addData("Gamepad 1 Left Stick Y", gamepad1.left_stick_y);
             telemetry.addData("Gamepad 1 Left Stick X", gamepad1.left_stick_x);
             telemetry.addData("Gamepad 1 Right Stick Y", gamepad1.right_stick_y);
@@ -283,12 +250,8 @@ public class MainYellowProgram extends LinearOpMode {
             telemetry.addData("Gamepad 2 Left Trigger", gamepad2.left_trigger);
             telemetry.addData("Gamepad 2 DPad Up", gamepad2.dpad_up);
             telemetry.addData("Gamepad 2 DPad Down", gamepad2.dpad_down);
-            telemetry.addData("Front Left Power", frontLeftPower);
-            telemetry.addData("Front Right Power", frontRightPower);
-            telemetry.addData("Back Left Power", backLeftPower);
-            telemetry.addData("Back Right Power", backRightPower);
             telemetry.addData("Intake Power",  intake.getPower());
-
+            //dirPower.debugTelemetry(telemetry);
             telemetry.update();
 
         }
