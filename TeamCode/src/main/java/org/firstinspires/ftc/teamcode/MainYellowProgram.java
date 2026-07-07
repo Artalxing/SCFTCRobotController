@@ -29,11 +29,13 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.util.DirectionalPower;
 import org.firstinspires.ftc.teamcode.util.Vector2;
 import org.threeten.bp.Instant;
@@ -73,6 +75,7 @@ public class MainYellowProgram extends LinearOpMode {
     ElapsedTime runtime = new ElapsedTime();
     DcMotor frontLeftDrive, backLeftDrive, frontRightDrive, backRightDrive, leftflywheel, rightflywheel, rotate, intake;
 
+    GoBildaPinpointDriver odometry;
 //Servo servo;
 
     TouchSensor limit;
@@ -96,6 +99,8 @@ public class MainYellowProgram extends LinearOpMode {
         rotate = hardwareMap.get(DcMotor.class, "rotate");
 
         intake = hardwareMap.get(DcMotor.class, "intake");
+
+        odometry = hardwareMap.get(GoBildaPinpointDriver.class, "odometry");
 
         //servo = hardwareMap.get(Servo.class, "servoTest");
 
@@ -125,6 +130,8 @@ public class MainYellowProgram extends LinearOpMode {
         rotate.setTargetPosition(0);
         rotate.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
+        odometry.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.REVERSED);
+
 //       rotate.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 //        rotate.setPower(1);
 
@@ -141,10 +148,15 @@ public class MainYellowProgram extends LinearOpMode {
         long flywheelSleepTimer = 0L;
         long invertSleepTimer = 0L;
         long driveSpeedSleepTimer = 0L;
+        long recalOdometrySleepTimer = 0L;
+        long resetOdometrySleepTimer = 0L;
 
+        //Init odometry
+        odometry.setOffsets(79.5, 162.5, DistanceUnit.MM);
+        odometry.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+        odometry.resetPosAndIMU();
         // Wait for the game to start (driver presses START)
         telemetry.addData("Status", "Initialized");
-
 
         waitForStart();
         runtime.reset();
@@ -158,6 +170,9 @@ public class MainYellowProgram extends LinearOpMode {
         int loopCount = 0;
         while (opModeIsActive()) {
             loopCount++;
+            telemetry.addData("Version", "v1.0.0");
+            //Update odometry
+            odometry.update();
             //Delta Time System
             long deltaTime = System.currentTimeMillis() - currentTime;
             currentTime = System.currentTimeMillis();
@@ -193,8 +208,19 @@ public class MainYellowProgram extends LinearOpMode {
                 driveSpeedSleepTimer = 50;
             }
 
+            //Reset
+            if (gamepad1.x && recalOdometrySleepTimer <= 0){
+                odometry.recalibrateIMU();
+                recalOdometrySleepTimer = 500;
+            }
+
+            if (gamepad1.y && gamepad1.x && gamepad1.dpad_up && resetOdometrySleepTimer <= 0){
+                odometry.resetPosAndIMU();
+                resetOdometrySleepTimer = 500;
+            }
+
             //Inversion
-            if (gamepad1.a && invertSleepTimer <= 0){
+            if (gamepad1.right_bumper && gamepad1.left_bumper && invertSleepTimer <= 0){
                 inverted = !inverted;
                 invertSleepTimer = 500;
             }
@@ -233,6 +259,9 @@ public class MainYellowProgram extends LinearOpMode {
             flywheelSleepTimer -= deltaTime;
             invertSleepTimer -= deltaTime;
             driveSpeedSleepTimer -= deltaTime;
+            recalOdometrySleepTimer -= deltaTime;
+            resetOdometrySleepTimer -= deltaTime;
+
 
 
             //TODO Debug code
@@ -241,6 +270,8 @@ public class MainYellowProgram extends LinearOpMode {
             telemetry.addData("Sleep Timer", flywheelSleepTimer);
             telemetry.addData("DeltaTime", deltaTime);
             telemetry.addData("Rotate Speed", rotation);
+            telemetry.addData("Odometry X (mm)", odometry.getPosX(DistanceUnit.MM));
+            telemetry.addData("Odometry Y (mm)", odometry.getPosY(DistanceUnit.MM));
             telemetry.addData("Gamepad 1 Left Stick Y", gamepad1.left_stick_y);
             telemetry.addData("Gamepad 1 Left Stick X", gamepad1.left_stick_x);
             telemetry.addData("Gamepad 1 Right Stick Y", gamepad1.right_stick_y);
