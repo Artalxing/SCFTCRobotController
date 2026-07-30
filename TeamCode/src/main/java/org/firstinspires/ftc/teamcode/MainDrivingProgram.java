@@ -75,20 +75,16 @@ public class MainDrivingProgram extends LinearOpMode {
 
     private final double DEADZONE = 0.1;
     private final boolean DEBUG = true;
-    //Naming
-    private final String frontLeftMotorName = "frontLeft";
-    private final String backLeftMotorName = "backLeft";
-    private final String frontRightMotorName = "frontRight";
-    private final String backRightMotorName = "backRight";
 
     @Override
     public void runOpMode() {
         // Initialize the hardware variables. Note that the strings used here must correspond
         // to the names assigned during the robot configuration step on the DS or RC devices.
-        frontLeftDrive = hardwareMap.get(DcMotor.class, frontLeftMotorName);
-        backLeftDrive = hardwareMap.get(DcMotor.class, backLeftMotorName);
-        frontRightDrive = hardwareMap.get(DcMotor.class, frontRightMotorName);
-        backRightDrive = hardwareMap.get(DcMotor.class, backRightMotorName);
+        //TODO Make sure names are correct!
+        frontLeftDrive = hardwareMap.get(DcMotor.class, "frontLeft");
+        backLeftDrive = hardwareMap.get(DcMotor.class, "backLeft");
+        frontRightDrive = hardwareMap.get(DcMotor.class, "frontRight");
+        backRightDrive = hardwareMap.get(DcMotor.class, "backRight");
 
 
         // ########################################################################################
@@ -101,6 +97,7 @@ public class MainDrivingProgram extends LinearOpMode {
         // when you first test your robot, push the left joystick forward and observe the direction the wheels turn.
         // Reverse the direction (flip FORWARD <-> REVERSE ) of any wheel that runs backward
         // Keep testing until ALL the wheels move the robot forward when you push the left joystick forward.
+        //TODO make sure directions are correct
         frontLeftDrive.setDirection(DcMotor.Direction.REVERSE);
         frontLeftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backLeftDrive.setDirection(DcMotor.Direction.FORWARD);
@@ -148,6 +145,7 @@ public class MainDrivingProgram extends LinearOpMode {
             //See if inverted
             if(inverted){
                 dir.invert();
+                rotation *= -1;
             }
             //Apply
             dirPower.drive(dir, power, rotation, telemetry, false);

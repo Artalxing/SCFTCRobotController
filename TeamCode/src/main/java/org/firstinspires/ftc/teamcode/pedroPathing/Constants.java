@@ -12,14 +12,14 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class Constants {
-    public static FollowerConstants followerConstants = new FollowerConstants().mass(0); //TODO Change this
+    public static FollowerConstants followerConstants = new FollowerConstants().mass(0); //TODO Change this with the mass in kgs,
 
     public static MecanumConstants driveConstants = new MecanumConstants()
             .maxPower(1)
-            .rightFrontMotorName("frontLeft")
-            .rightRearMotorName("backRight")
-            .leftRearMotorName("backLeft")
-            .leftFrontMotorName("frontLeft")
+            .rightFrontMotorName("frontLeft") //TODO Make sure names are correct!
+            .rightRearMotorName("backRight") //TODO Make sure names are correct!
+            .leftRearMotorName("backLeft") //TODO Make sure names are correct!
+            .leftFrontMotorName("frontLeft") //TODO Make sure names are correct!
             .leftFrontMotorDirection(DcMotorSimple.Direction.REVERSE) //TODO Change this
             .leftRearMotorDirection(DcMotorSimple.Direction.FORWARD) //TODO Change this
             .rightFrontMotorDirection(DcMotorSimple.Direction.REVERSE) //TODO Change this
