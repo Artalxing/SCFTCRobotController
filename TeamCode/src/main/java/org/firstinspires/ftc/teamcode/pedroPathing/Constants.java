@@ -12,22 +12,22 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class Constants {
-    public static FollowerConstants followerConstants = new FollowerConstants().mass(11.25);
+    public static FollowerConstants followerConstants = new FollowerConstants().mass(0); //TODO Change this
 
     public static MecanumConstants driveConstants = new MecanumConstants()
             .maxPower(1)
-            .rightFrontMotorName("fr")
-            .rightRearMotorName("br")
-            .leftRearMotorName("bl")
-            .leftFrontMotorName("fl")
-            .leftFrontMotorDirection(DcMotorSimple.Direction.REVERSE)
-            .leftRearMotorDirection(DcMotorSimple.Direction.FORWARD)
-            .rightFrontMotorDirection(DcMotorSimple.Direction.REVERSE)
-            .rightRearMotorDirection(DcMotorSimple.Direction.FORWARD);
+            .rightFrontMotorName("frontLeft")
+            .rightRearMotorName("backRight")
+            .leftRearMotorName("backLeft")
+            .leftFrontMotorName("frontLeft")
+            .leftFrontMotorDirection(DcMotorSimple.Direction.REVERSE) //TODO Change this
+            .leftRearMotorDirection(DcMotorSimple.Direction.FORWARD) //TODO Change this
+            .rightFrontMotorDirection(DcMotorSimple.Direction.REVERSE) //TODO Change this
+            .rightRearMotorDirection(DcMotorSimple.Direction.FORWARD); //TODO Change this
 
     public static PinpointConstants localizerConstants = new PinpointConstants()
-            .forwardPodY(-6.651141309) //-6.1631 //Change this to 0 and use the offset tuner to tune the offset
-            .strafePodX(-3.1300712044) //-3.409 //Change this to 0 and use the offset tuner to tune the offset
+            .forwardPodY(0) //TODO Change this to 0 and use the offset tuner to tune the offset
+            .strafePodX(0) //TODO Change this to 0 and use the offset tuner to tune the offset
             .distanceUnit(DistanceUnit.INCH)
             .hardwareMapName("odometry")
             .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
