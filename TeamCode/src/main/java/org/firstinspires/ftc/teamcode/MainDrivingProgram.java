@@ -32,6 +32,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.util.DirectionalPower;
@@ -71,7 +72,8 @@ public class MainDrivingProgram extends LinearOpMode {
 
     // Variable Declaration
     ElapsedTime runtime = new ElapsedTime();
-    DcMotor frontLeftDrive, backLeftDrive, frontRightDrive, backRightDrive;
+    DcMotor frontLeftDrive, backLeftDrive, frontRightDrive, backRightDrive, intake, flywheel;
+    Servo rotate;
 
     private final double DEADZONE = 0.1;
     private final boolean DEBUG = true;
@@ -85,6 +87,11 @@ public class MainDrivingProgram extends LinearOpMode {
         backLeftDrive = hardwareMap.get(DcMotor.class, "backLeft");
         frontRightDrive = hardwareMap.get(DcMotor.class, "frontRight");
         backRightDrive = hardwareMap.get(DcMotor.class, "backRight");
+        intake = hardwareMap.get(DcMotor.class, "intake");
+        flywheel = hardwareMap.get(DcMotor.class, "flywheel");
+
+        rotate = hardwareMap.get(Servo.class, "rotate");
+
 
 
         // ########################################################################################
@@ -106,6 +113,12 @@ public class MainDrivingProgram extends LinearOpMode {
         frontRightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backRightDrive.setDirection(DcMotor.Direction.FORWARD);
         backRightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        intake.setDirection(DcMotor.Direction.FORWARD);
+        intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        flywheel.setDirection(DcMotor.Direction.FORWARD);
+        flywheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rotate.setDirection(Servo.Direction.FORWARD);
+        rotate.setPosition(0);
 
         //init variables
         Vector2 dir = new Vector2(0,0);
@@ -120,6 +133,7 @@ public class MainDrivingProgram extends LinearOpMode {
         long flywheelSleepTimer = 0L;
         long invertSleepTimer = 0L;
         long driveSpeedSleepTimer = 0L;
+        long dpadSleepTimer = 0L;
 
         // Wait for the game to start (driver presses START)
         telemetry.addData("Status", "Initialized");
@@ -167,6 +181,40 @@ public class MainDrivingProgram extends LinearOpMode {
                 inverted = !inverted;
                 invertSleepTimer = 500;
             }
+
+            //Handle Flywheel
+            if (gamepad2.right_bumper && flywheelSleepTimer <= 0){
+                if(flywheel.getPower() == 0){
+                    flywheel.setPower(1);
+                } else {
+                    flywheel.setPower(0);
+                }
+                flywheelSleepTimer = 500;
+            }
+            //Handle Intake
+            if (gamepad2.right_trigger > DEADZONE && gamepad2.left_trigger > DEADZONE){
+                //Set intake to 0
+                intake.setPower(0);
+            } else if (gamepad2.left_trigger > DEADZONE){
+                //Do negative
+                intake.setPower(-1);
+            } else if (gamepad2.right_trigger > DEADZONE){
+                //Do positive
+                intake.setPower(1);
+            }
+
+            //Handle Dpad for rotate
+            double rotatePos = rotate.getPosition();
+            if (gamepad2.dpad_up && dpadSleepTimer <= 0){
+                //Add 0.02 to rotate position
+                rotate.setPosition(rotatePos + 0.02);
+                dpadSleepTimer = 50;
+            } else if (gamepad2.dpad_down && dpadSleepTimer <= 0){
+                //Subtract 0.02 from rotate position
+                rotate.setPosition(rotatePos - 0.02);
+                dpadSleepTimer = 50;
+            }
+
 
             //Update Sleep Timer
             flywheelSleepTimer -= deltaTime;
